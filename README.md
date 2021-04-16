@@ -6,6 +6,11 @@
 
 Extending lombok @Cleanup annotation to store a variable and pass it to consumer function upon returning.
 
+#### Example of use case:
+1. How to add a method call before returning from a method on java without writing try{} finally{} boilerplate?
+2. How to reset value before returning from a method on java without writing try{} finally{} boilerplate?
+3. How to push a value and pop it before returning from a method on java without writing try{} finally{} boilerplate?
+
 #### How to use:
 
      ...
