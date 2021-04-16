@@ -1,0 +1,38 @@
+package com.samaicita.point.lombok;
+
+import java.util.function.Consumer;
+
+/**
+ *
+ * Extending lombok @Cleanup annotation to store a variable and pass it to consumer function upon returning.
+ *
+ * How to use:
+ *
+ *      @Cleanup CloseableTemporaryVariable<List> temporaryVariable = new CloseableTemporaryVariable<>(trxGroup.getChilds(), trxGroup::setChilds);
+ *
+ * Translated into java:
+ *
+ *      CloseableTemporaryVariable<List> temporaryVariable = new CloseableTemporaryVariable<>(trxGroup.getChilds(), trxGroup::setChilds);
+ *      try {
+ *
+ *      } finally {
+ *          if (temporaryVariable != null)
+ *              temporaryVariable.close();
+ *      }
+ *
+ * @param <T>
+ */
+public class CloseableTemporaryVariable<T> {
+
+    private final T tmp;
+    private final Consumer<T> consumer;
+
+    public CloseableTemporaryVariable(T tmp, Consumer<T> consumer) {
+        this.tmp = tmp;
+        this.consumer = consumer;
+    }
+
+    public void close() {
+        consumer.accept(tmp);
+    }
+}
