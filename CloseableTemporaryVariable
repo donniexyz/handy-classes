@@ -1,5 +1,7 @@
 package com.samaicita.point.lombok;
 
+import lombok.Getter;
+
 import java.util.function.Consumer;
 
 /**
@@ -8,31 +10,39 @@ import java.util.function.Consumer;
  *
  * How to use:
  *
+ *      ...
  *      @Cleanup CloseableTemporaryVariable<List> temporaryVariable = new CloseableTemporaryVariable<>(trxGroup.getChilds(), trxGroup::setChilds);
+ *      trxGroup.setChilds(null);
+ *      ...
  *
  * Translated into java:
  *
+ *      ...
  *      CloseableTemporaryVariable<List> temporaryVariable = new CloseableTemporaryVariable<>(trxGroup.getChilds(), trxGroup::setChilds);
- *      try {
+ *      // meaning temporaryVariable.data = trxGroup.getChilds()
  *
+ *      try {
+ *          trxGroup.setChilds(null);
+ *          ...
  *      } finally {
  *          if (temporaryVariable != null)
- *              temporaryVariable.close();
+ *              temporaryVariable.close();  // meaning trxGroup.setChilds(temporaryVariable.data)
  *      }
  *
  * @param <T>
  */
+@Getter
 public class CloseableTemporaryVariable<T> {
 
-    private final T tmp;
+    private final T data;
     private final Consumer<T> consumer;
 
-    public CloseableTemporaryVariable(T tmp, Consumer<T> consumer) {
-        this.tmp = tmp;
+    public CloseableTemporaryVariable(T data, Consumer<T> consumer) {
+        this.data = data;
         this.consumer = consumer;
     }
 
     public void close() {
-        consumer.accept(tmp);
+        consumer.accept(data);
     }
 }
