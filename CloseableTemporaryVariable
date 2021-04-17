@@ -5,30 +5,42 @@ import lombok.Getter;
 import java.util.function.Consumer;
 
 /**
- *
  * Extending lombok @Cleanup annotation to store a variable and pass it to consumer function upon returning.
+ * <p>
+ * How to use:</p>
+ *   1. Example:
+ *  <pre>
+ *         &#64;Cleanup val tmp = new CloseableTemporaryVariable<>(trxGroup.getChild(), trxGroup::setChild);
+ *         trxGroup.setChild(null);
+ *  </pre>
+ *     Generated java:
+ *  <pre>
+ *          final CloseableTemporaryVariable<List> tmp = new CloseableTemporaryVariable<>(trxGroup.getChild(), trxGroup::setChild);
+ *          // meaning temporaryVariable.data = trxGroup.getChild()
  *
- * How to use:
+ *          try {
+ *              trxGroup.setChild(null);
+ *              ...
+ *          } finally {
+ *              if (tmp != null)
+ *                  tmp.close();  // meaning trxGroup.setChild(tmp.data)
+ *          }
+ *  </pre>
+ *   2. Example:
+ *  <pre>
+ *         &#64;Cleanup val tmp = new CloseableTemporaryVariable<>(() -> trxGroup.add("completed)");
+ *  </pre>
+ *     Generated java:
+ *  <pre>
+ *          final CloseableTemporaryVariable<List> tmp = new CloseableTemporaryVariable<>(() -> trxGroup.add("completed)");
  *
- *      ...
- *      @Cleanup CloseableTemporaryVariable<List> temporaryVariable = new CloseableTemporaryVariable<>(trxGroup.getChilds(), trxGroup::setChilds);
- *      trxGroup.setChilds(null);
- *      ...
- *
- * Translated into java:
- *
- *      ...
- *      CloseableTemporaryVariable<List> temporaryVariable = new CloseableTemporaryVariable<>(trxGroup.getChilds(), trxGroup::setChilds);
- *      // meaning temporaryVariable.data = trxGroup.getChilds()
- *
- *      try {
- *          trxGroup.setChilds(null);
- *          ...
- *      } finally {
- *          if (temporaryVariable != null)
- *              temporaryVariable.close();  // meaning trxGroup.setChilds(temporaryVariable.data)
- *      }
- *
+ *          try {
+ *              ...
+ *          } finally {
+ *              if (tmp != null)
+ *                  tmp.close();  // meaning trxGroup.add("completed)")
+ *          }
+ * </pre>
  * @param <T>
  */
 @Getter
@@ -36,13 +48,24 @@ public class CloseableTemporaryVariable<T> {
 
     private final T data;
     private final Consumer<T> consumer;
+    private final Runnable runnable;
+
+    public CloseableTemporaryVariable(Runnable runnable) {
+        this.data = null;
+        this.consumer = null;
+        this.runnable = runnable;
+    }
 
     public CloseableTemporaryVariable(T data, Consumer<T> consumer) {
         this.data = data;
         this.consumer = consumer;
+        this.runnable = null;
     }
 
+    @SuppressWarnings("unused")
     public void close() {
-        consumer.accept(data);
+        if (null != consumer) consumer.accept(data);
+        else if (null != runnable) runnable.run();
     }
 }
+
